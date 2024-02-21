@@ -1,4 +1,5 @@
 import numpy as np
+import time
 
 class CustomNormalization:
     def __init__(self):
@@ -92,25 +93,53 @@ def dense(a_in, W, b, g=sigmoid):
         a_out[j] = g(z)
     return a_out
 
-def sequential(x, W1, b1, W2, b2):
+def dense_vectorized(AT, W, b, g=sigmoid):
     """
-    Constructs and evaluates a simple 2-layer neural network model.
+    Represents a dense (fully connected) layer in a neural network utilizing vectorized operations for efficiency.
+    This function computes the outputs for multiple inputs in a batch.
 
     Args:
-        x (ndarray): The input data, shape (n,).
+        AT (ndarray): The transpose of the input matrix to the layer, shape (n, m), where m is the number of input samples.
+        W (ndarray): The weight matrix of the layer, shape (n, j).
+        b (ndarray): The bias vector of the layer, shape (j,).
+        g (callable): The activation function to be applied element-wise.
+
+    Returns:
+        ndarray: The output of the dense layer for all inputs, shape (m, j), where each row corresponds to the output for one input sample.
+
+    Notes:
+        - The function is optimized for handling multiple inputs at once, leveraging matrix multiplication for faster computation compared to iterating over inputs.
+    """
+    Z = np.matmul(AT,W)+b
+    a_out = g(Z)
+    return a_out
+
+def sequential(x, W1, b1, W2, b2, vectorized=False):
+    """
+    Constructs and evaluates a simple 2-layer neural network model.
+    Can operate in vectorized mode for efficiency.
+
+    Args:
+        x (ndarray): The input data. Shape (n,) for non-vectorized, shape (m, n) for vectorized.
         W1, W2 (ndarray): Weight matrices for the first and second layers.
         b1, b2 (ndarray): Bias vectors for the first and second layers.
+        vectorized (bool): If True, uses the vectorized implementation.
 
     Returns:
         ndarray: The output of the neural network.
     """
-    a1 = dense(x, W1, b1)
-    a2 = dense(a1, W2, b2)
+    if vectorized:
+        a1 = dense_vectorized(x, W1, b1, sigmoid)  # Note: x and following a1 is already transposed, so no additional x.T,a1.T required
+        a2 = dense_vectorized(a1, W2, b2, sigmoid)
+    else:
+        a1 = dense(x, W1, b1, sigmoid)
+        a2 = dense(a1, W2, b2, sigmoid)
     return a2
 
 def predict(X, W1, b1, W2, b2):
     """
     Predicts the output for multiple inputs using the sequential neural network model.
+    Compares the efficiency of non-vectorized and vectorized implementations.
 
     Args:
         X (ndarray): The input data, shape (m, n), for m examples.
@@ -118,13 +147,34 @@ def predict(X, W1, b1, W2, b2):
         b1, b2 (ndarray): Bias vectors for the network.
 
     Returns:
-        ndarray: The predicted outputs, shape (m, 1).
+        Prints predictions and efficiency comparison.
     """
-    m = X.shape[0]
-    p = np.zeros((m, 1))
-    for i in range(m):
-        p[i, 0] = sequential(X[i], W1, b1, W2, b2)
-    return p
+    start_time = time.time()
+    predictions_non_vectorized = np.array([sequential(x, W1, b1, W2, b2) for x in X])
+    non_vectorized_time = time.time() - start_time
+
+    start_time = time.time()
+    predictions_vectorized = sequential(X, W1, b1, W2, b2, vectorized=True)
+    vectorized_time = time.time() - start_time
+
+    print("Predictions (Non-Vectorized):")
+    print(predictions_non_vectorized)
+    print("\nPredictions (Vectorized):")
+    print(predictions_vectorized)
+
+    print("\nEfficiency Comparison:")
+    print(f"Non-Vectorized Time: {non_vectorized_time} seconds")
+    print(f"Vectorized Time: {vectorized_time} seconds")
+
+    # Assuming the vectorized implementation might produce a 2D array
+    # Flatten if necessary for direct comparison
+    if predictions_vectorized.ndim > 1:
+        predictions_vectorized = predictions_vectorized.flatten()
+    # Compare predictions (Optional, for demonstration)
+    if np.allclose(predictions_non_vectorized, predictions_vectorized):
+        print("Predictions are approximately equal.")
+    else:
+        print("Predictions differ significantly.")
 
 
 # Example usage
@@ -134,14 +184,8 @@ b1_tmp = np.array([-9.82, -9.28, 0.96])
 W2_tmp = np.array([[-31.18], [-27.59], [-32.56]])
 b2_tmp = np.array([15.41])
 
-# Example input data
-X_tst = np.array([
-    [200, 13.9],  # Example 1
-    [200, 17]  # Example 2
-])
 
-
-
+# Example input data, already transposed
 X_test = np.array([
     [200,13.9],  # Example 1
     [200, 17]  # Example 2
