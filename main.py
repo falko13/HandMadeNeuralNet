@@ -1,15 +1,17 @@
 import numpy as np
 import time
 
+
 class CustomNormalization:
     def __init__(self):
         """
-        Initialize with predefined mean and variance for testing without actual training data.
-        This is only for demonstration purposes and should ideally be replaced with dynamic computation in fit method.
+        Initialize with predefined mean and variance for testing without actual
+        training data. This is only for demonstration purposes and should ideally
+        be replaced with dynamic computation in fit method.
         """
         self.mean = [218.67, 13.43]
         self.variance = [1.60e+03, 1.27e+00]
-        self.std = [v**0.5 for v in self.variance]  # Calculate standard deviation from variance
+        self.std = [v ** 0.5 for v in self.variance]  # Calculate standard deviation
 
     def fit(self, X):
         """
@@ -21,8 +23,10 @@ class CustomNormalization:
         """
         m, n = X.shape
         self.mean = [sum(X[:, j]) / m for j in range(n)]
-        self.variance = [sum((x_ij - self.mean[j])**2 for x_ij in X[:, j]) / m for j in range(n)]
-        self.std = [v**0.5 for v in self.variance]
+        self.variance = [
+            sum((x_ij - self.mean[j]) ** 2 for x_ij in X[:, j]) / m for j in range(n)
+        ]
+        self.std = [v ** 0.5 for v in self.variance]
 
     def transform(self, X):
         """
@@ -62,7 +66,8 @@ class CustomNormalization:
 
 def sigmoid(z):
     """
-    The sigmoid activation function. Maps any real value to the (0, 1) interval, acting as an activation function.
+    The sigmoid activation function. Maps any real value to the (0, 1) interval,
+    acting as an activation function.
 
     Args:
         z (float or ndarray): The input value(s) to the sigmoid function.
@@ -72,9 +77,11 @@ def sigmoid(z):
     """
     return 1 / (1 + np.exp(-z))
 
+
 def dense(a_in, W, b, g=sigmoid):
     """
-    Represents a dense (fully connected) layer in a neural network. This function computes the layer's output.
+    Represents a dense (fully connected) layer in a neural network. This function
+    computes the layer's output.
 
     Args:
         a_in (ndarray): The input array to the layer, shape (n,).
@@ -93,26 +100,33 @@ def dense(a_in, W, b, g=sigmoid):
         a_out[j] = g(z)
     return a_out
 
+
 def dense_vectorized(AT, W, b, g=sigmoid):
     """
-    Represents a dense (fully connected) layer in a neural network utilizing vectorized operations for efficiency.
-    This function computes the outputs for multiple inputs in a batch.
+    Represents a dense (fully connected) layer in a neural network utilizing
+    vectorized operations for efficiency. This function computes the outputs
+    for multiple inputs in a batch.
 
     Args:
-        AT (ndarray): The transpose of the input matrix to the layer, shape (n, m), where m is the number of input samples.
+        AT (ndarray): The transpose of the input matrix to the layer, shape (n, m),
+                      where m is the number of input samples.
         W (ndarray): The weight matrix of the layer, shape (n, j).
         b (ndarray): The bias vector of the layer, shape (j,).
         g (callable): The activation function to be applied element-wise.
 
     Returns:
-        ndarray: The output of the dense layer for all inputs, shape (m, j), where each row corresponds to the output for one input sample.
+        ndarray: The output of the dense layer for all inputs, shape (m, j),
+                 where each row corresponds to the output for one input sample.
 
     Notes:
-        - The function is optimized for handling multiple inputs at once, leveraging matrix multiplication for faster computation compared to iterating over inputs.
+        - The function is optimized for handling multiple inputs at once,
+          leveraging matrix multiplication for faster computation compared to
+          iterating over inputs.
     """
-    Z = np.matmul(AT,W)+b
+    Z = np.matmul(AT, W) + b
     a_out = g(Z)
     return a_out
+
 
 def sequential(x, W1, b1, W2, b2, vectorized=False):
     """
@@ -129,12 +143,13 @@ def sequential(x, W1, b1, W2, b2, vectorized=False):
         ndarray: The output of the neural network.
     """
     if vectorized:
-        a1 = dense_vectorized(x, W1, b1, sigmoid)  # Note: x and following a1 is already transposed, so no additional x.T,a1.T required
+        a1 = dense_vectorized(x, W1, b1, sigmoid)
         a2 = dense_vectorized(a1, W2, b2, sigmoid)
     else:
         a1 = dense(x, W1, b1, sigmoid)
         a2 = dense(a1, W2, b2, sigmoid)
     return a2
+
 
 def predict(X, W1, b1, W2, b2):
     """
@@ -184,11 +199,10 @@ b1_tmp = np.array([-9.82, -9.28, 0.96])
 W2_tmp = np.array([[-31.18], [-27.59], [-32.56]])
 b2_tmp = np.array([15.41])
 
-
 # Example input data, already transposed
 X_test = np.array([
-    [200,13.9],  # Example 1
-    [200, 17]  # Example 2
+    [200, 13.9],  # Example 1
+    [200, 17]     # Example 2
 ])
 
 normalizer = CustomNormalization()
@@ -200,7 +214,6 @@ normalizer = CustomNormalization()
 X_test_normalized = normalizer.transform(X_test)
 
 # Now, X_train_normalized and X_test_normalized are ready for use in training or prediction
-
 
 # Predict using the model
 predictions = predict(X_test_normalized, W1_tmp, b1_tmp, W2_tmp, b2_tmp)
